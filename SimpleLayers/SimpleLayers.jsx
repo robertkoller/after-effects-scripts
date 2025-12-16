@@ -1,4 +1,7 @@
-var window = new Window("pallete", "SIMPLE LAYERS", undefined);
+var LABEL_RED   = 1;
+var LABEL_WHITE = 0;
+
+var window = new Window("palette", "SIMPLE LAYERS", undefined);
 window.orientation = "column";
 var text = window.add("statictext", undefined, "Null Layers");
 
@@ -13,8 +16,8 @@ var group2 = window.add("group", undefined);
 group2.orientation = "row";
 
 var addAdjustBtn = group2.add("button", undefined, "Add Adjustment Layer");
-var addOneFramer = group2.add("button", undefined, "1Framer");
-addOneFramer.size = [80, 25];
+var addFramer = group2.add("button", undefined, "1Framer");
+addFramer.size = [80, 25];
 
 window.add("statictext", undefined, "Solid Layers");
 
@@ -37,16 +40,25 @@ swatch.onDraw = function () {
 swatch.addEventListener("click", function () {
     var picked = app.showColorPicker();
     if (picked) {
-        solidColor = picked.slice(); // store new color
-        swatch.notify("onDraw"); // repaint
+        solidColor = [
+            picked[0] / 255,
+            picked[1] / 255,
+            picked[2] / 255
+        ];
+        swatch.notify("onDraw");
     }
 });
+
+
+var group4 = window.add("group", undefined);
+group4.orientation = "row";
+var infoText = group4.add("statictext", undefined, "Made by Dursc");
 
 addSolidBtn.onClick = function () {
     addSolidLayerWithColor();
 };
 
-addOneFramer.onClick = function() {
+addFramer.onClick = function() {
     addOneFramer();
 }
 
@@ -59,77 +71,120 @@ addNullBtn.onClick = function() {
 }
 function addSolidLayerWithColor() {
     var comp = app.project.activeItem;
+    if (!(comp && comp instanceof CompItem)) return;
+    if (comp.selectedLayers.length === 0) return;
 
-    if (comp && comp instanceof CompItem) {
-        app.beginUndoGroup("Add Solid Layer");
+    app.beginUndoGroup("Add Solid Layer");
 
-        // Create the colored solid
-        var solid = comp.layers.addSolid(
-            solidColor,
-            "Solid Layer",
-            comp.width,
-            comp.height,
-            comp.pixelAspect
-        );
+    var ref = comp.selectedLayers[0];
+    var solid = comp.layers.addSolid(
+        solidColor,
+        "Solid Layer",
+        comp.width,
+        comp.height,
+        comp.pixelAspect
+    );
 
-        // Place it above the selected layer if one is selected
-        if (comp.selectedLayers.length > 0) {
-            moveAndTrimLayer(comp, solid);
-        }
+    solid.label = LABEL_RED;
+    solid.moveBefore(ref);
+    solid.inPoint  = ref.inPoint;
+    solid.outPoint = ref.outPoint;
 
-        app.endUndoGroup();
-    } else {
-        alert("Please select an active composition.");
-    }
+    app.endUndoGroup();
 }
-function addOneFramer(){
+
+function addOneFramer() {
     var comp = app.project.activeItem;
-    if (comp && comp instanceof CompItem) {
-        app.beginUndoGroup("Add One Framer Adjustment Layer");
-        var adjustLayer = comp.layers.addSolid([1, 1, 1], "Adjustment Layer", comp.width, comp.height, comp.pixelAspect);
-        adjustLayer.adjustmentLayer = true;
-        adjustLayer.moveBefore(comp.selectedLayers[0]);
-        adjustLayer.inPoint = comp.selectedLayers[0].inPoint;
-        adjustLayer.outPoint = adjustLayer.inPoint + (1 / comp.frameRate);
-        app.endUndoGroup();
-    } else {
-        alert("Please select an active composition.");
-    }
+    if (!(comp && comp instanceof CompItem)) return;
+    if (comp.selectedLayers.length === 0) return;
+
+    app.beginUndoGroup("Add One Framer");
+
+    var ref = comp.selectedLayers[0];
+    var layer = comp.layers.addSolid(
+        [1,1,1],
+        "1F Adjustment",
+        comp.width,
+        comp.height,
+        comp.pixelAspect
+    );
+
+    layer.adjustmentLayer = true;
+    layer.label = LABEL_WHITE;
+    layer.moveBefore(ref);
+
+    layer.inPoint  = ref.inPoint;
+    layer.outPoint = ref.inPoint + (1 / comp.frameRate);
+
+    app.endUndoGroup();
 }
-function addAdjustmentLayer(){
+
+function addAdjustmentLayer() {
     var comp = app.project.activeItem;
-    if (comp && comp instanceof CompItem) {
-        app.beginUndoGroup("Add Adjustment Layer");
-        var adjustLayer = comp.layers.addSolid([1, 1, 1], "Adjustment Layer", comp.width, comp.height, comp.pixelAspect);
-        adjustLayer.adjustmentLayer = true;
-        moveAndTrimLayer(comp, adjustLayer);
-        app.endUndoGroup();
-    } else {
-        alert("Please select an active composition.");
-    }
+    if (!(comp && comp instanceof CompItem)) return;
+    if (comp.selectedLayers.length === 0) return;
+
+    app.beginUndoGroup("Add Adjustment Layer");
+
+    var ref = comp.selectedLayers[0];
+    var layer = comp.layers.addSolid(
+        [1,1,1],
+        "Adjustment Layer",
+        comp.width,
+        comp.height,
+        comp.pixelAspect
+    );
+
+    layer.adjustmentLayer = true;
+    layer.label = LABEL_WHITE;
+    layer.moveBefore(ref);
+    layer.inPoint  = ref.inPoint;
+    layer.outPoint = ref.outPoint;
+
+    app.endUndoGroup();
 }
+
 function addNullLayerAndParent() {
     var comp = app.project.activeItem;
-    if (comp && comp instanceof CompItem) {
+    if (!(comp && comp instanceof CompItem)) return;
+    if (comp.selectedLayers.length === 0) return;
 
-        // Add Null to top
-        app.beginUndoGroup("Add Null Layer");
-        var nullLayer = comp.layers.addNull();
-        nullLayer.name = "Null Layer";
+    app.beginUndoGroup("Add Null Layer");
 
-        moveAndTrimLayer(comp, nullLayer);
+    var ref = comp.selectedLayers[0];
+    var nullLayer = comp.layers.addNull();
 
-        // Parent selected layer to Null
-        comp.selectedLayers[0].parent = nullLayer;
-        app.endUndoGroup();
-    } else {
-        alert("Please select an active layer.");
-    }
+    nullLayer.name = "Null";
+    nullLayer.label = LABEL_RED;
+    nullLayer.moveBefore(ref);
+    nullLayer.inPoint  = ref.inPoint;
+    nullLayer.outPoint = ref.outPoint;
+
+    ref.parent = nullLayer;
+
+    app.endUndoGroup();
 }
+
 function moveAndTrimLayer(comp, layer){
     layer.moveBefore(comp.selectedLayers[0]);
     layer.inPoint = comp.selectedLayers[0].inPoint;
     layer.outPoint = comp.selectedLayers[0].outPoint;
 }
+
+function placeAboveSelected(comp, layer) {
+    if (comp.selectedLayers.length > 0) {
+        layer.moveBefore(comp.selectedLayers[0]);
+    }
+}
+function trimToSelected(comp, layer) {
+    if (comp.selectedLayers.length === 0) return;
+
+    var ref = comp.selectedLayers[0];
+    layer.inPoint  = ref.inPoint;
+    layer.outPoint = ref.outPoint;
+}
+
+window.layout.layout(true);
+window.layout.resize();
 window.show();
 window.center();
