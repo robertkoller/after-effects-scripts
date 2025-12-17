@@ -19,7 +19,8 @@ adding these layers to your composition:
 - Creates one-frame adjustment layers  
 
 ### Solid Layers
-- Quickly add solid layers  
+- Quickly add solid layers
+- Creates one-frame solid layers
 - Choose colors through a color picker  
 
 ---
@@ -34,4 +35,4 @@ adding these layers to your composition:
 **Windows:**  
 `C:\Program Files\Adobe\Adobe After Effects [version]\Support Files\Scripts\ScriptUI Panels\`
 
-3. Restart After Effects.  
+3. Restart After Effects.
