@@ -14,7 +14,7 @@ Tools for quickly creating and managing:
 * Null layers
 * Adjustment layers
 * Solid layers
-* One-frame adjustment layers
+* One-frame adjustment and solid layers
 
 ## Installation
 
@@ -34,3 +34,9 @@ To install any script:
 3. Restart After Effects.
 4. Open the panel from:
 **Window → [Script Name]**
+
+Also at the end of my scripts or even in the code 
+you may see text saying "Made by Dursc". 
+"Dursc" is just my alias in the editing community 
+so I chose to add that for any recognition when 
+I share these scripts.

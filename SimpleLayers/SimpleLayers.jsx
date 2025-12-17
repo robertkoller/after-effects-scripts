@@ -1,3 +1,7 @@
+// Simple Layers Script for After Effects
+// Adds Null, Adjustment, and Solid layers with ease
+// Last Updated: 12/16/2025
+
 // labels for layers in composition
 var LABEL_RED = 1;
 var LABEL_WHITE = 5;
@@ -12,7 +16,7 @@ var LABEL_WHITE = 5;
     win.minimumSize = [240, 300];
 
     // Null Layers Section
-    var nullHeader = win.add('statictext', undefined, 'Null Layers')
+    win.add('statictext', undefined, 'Null Layers')
     var group1 = win.add('group', undefined)
     group1.orientation = 'row'
     var addNullBtn = group1.add('button', undefined, 'Add Null')
@@ -20,7 +24,7 @@ var LABEL_WHITE = 5;
     parentCheckbox.value = true
 
     // Adjustment Layers Section
-    var adjustmentHeader = win.add('statictext', undefined, 'Adjustment Layers')
+    win.add('statictext', undefined, 'Adjustment Layers')
     var group2 = win.add('group', undefined)
     group2.orientation = 'row'
     var addAdjustBtn = group2.add('button', undefined, 'Add Adjustment')
@@ -28,7 +32,7 @@ var LABEL_WHITE = 5;
     addFramer.size = [35, 25]
 
     // Solid Layers Section
-    var solidHeader = win.add('statictext', undefined, 'Solid Layers')
+    win.add('statictext', undefined, 'Solid Layers')
     var group3 = win.add('group', undefined)
     group3.orientation = 'row'
     var addSolidBtn = group3.add('button', undefined, 'Add Solid')
@@ -97,7 +101,6 @@ var LABEL_WHITE = 5;
         app.beginUndoGroup('Add Solid Layer')
 
         var rgb = [solidColor[0], solidColor[1], solidColor[2]]
-
         var solid = comp.layers.addSolid(
             rgb,
             'Solid Layer',
@@ -105,8 +108,8 @@ var LABEL_WHITE = 5;
             comp.height,
             comp.pixelAspect
         )
-
         solid.label = LABEL_RED
+
         if (ref) {
             moveAndTrimLayer(ref, solid)
         }
@@ -128,7 +131,7 @@ var LABEL_WHITE = 5;
 
         var t = comp.time
         var frameDur = 1 / comp.frameRate
-        if (typeOfLayer === 1) {
+        if (typeOfLayer === 1) { // adjustment layer
             var layer = comp.layers.addSolid(
                 [1, 1, 1],
                 '1F Adjustment',
@@ -139,7 +142,7 @@ var LABEL_WHITE = 5;
             layer.adjustmentLayer = true
             layer.label = LABEL_WHITE
         } else {
-            // for now this is just if typeOfLayer = 0
+            // for now this is just if typeOfLayer = 0, aka solid layer
             var rgb = [solidColor[0], solidColor[1], solidColor[2]]
             var layer = comp.layers.addSolid(
                 rgb,
@@ -179,7 +182,6 @@ var LABEL_WHITE = 5;
             comp.height,
             comp.pixelAspect
         )
-
         layer.adjustmentLayer = true
         layer.label = LABEL_WHITE
 
@@ -197,10 +199,10 @@ var LABEL_WHITE = 5;
         }
 
         var ref = comp.selectedLayers.length > 0 ? comp.selectedLayers[0] : null
+
         app.beginUndoGroup('Add Null Layer')
 
         var nullLayer = comp.layers.addNull()
-
         nullLayer.name = 'Null'
         nullLayer.label = LABEL_RED
 
@@ -214,24 +216,14 @@ var LABEL_WHITE = 5;
         app.endUndoGroup()
     }
 
+    // Moves layer before ref and trims to ref's in and out points
     function moveAndTrimLayer(ref, layer) {
         layer.moveBefore(ref)
         layer.inPoint = ref.inPoint
         layer.outPoint = ref.outPoint
     }
 
-    function placeAboveSelected(comp, layer) {
-        if (comp.selectedLayers.length > 0) {
-            layer.moveBefore(comp.selectedLayers[0])
-        }
-    }
-    function trimToSelected(comp, layer) {
-        if (comp.selectedLayers.length === 0) return
-
-        var ref = comp.selectedLayers[0]
-        layer.inPoint = ref.inPoint
-        layer.outPoint = ref.outPoint
-    }
+    // Converts decimal color to RGBA array
     function decimalToRGBA(dec) {
         var r = (dec >> 16) & 255
         var g = (dec >> 8) & 255
