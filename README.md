@@ -35,6 +35,7 @@ To install any script:
 4. Open the panel from:
 **Window → [Script Name]**
 
+## Additional Notes
 Also at the end of my scripts or even in the code 
 you may see text saying "Made by Dursc". 
 "Dursc" is just my alias in the editing community 
