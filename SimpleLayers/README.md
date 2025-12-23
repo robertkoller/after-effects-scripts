@@ -36,3 +36,6 @@ adding these layers to your composition:
 `C:\Program Files\Adobe\Adobe After Effects [version]\Support Files\Scripts\ScriptUI Panels\`
 
 3. Restart After Effects.
+
+## Additional Notes
+N/a

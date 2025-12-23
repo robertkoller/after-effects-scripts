@@ -5,6 +5,7 @@
 // labels for layers in composition
 var LABEL_RED = 1;
 var LABEL_WHITE = 5;
+
 (function buildUI(thisObj) {
     var win = (thisObj instanceof Panel)
         ? thisObj
