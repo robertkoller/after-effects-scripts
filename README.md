@@ -16,6 +16,12 @@ Tools for quickly creating and managing:
 * Solid layers
 * One-frame adjustment and solid layers
 
+### PreTwix
+
+Tool used for getting rid duplicate "dead frames" in footage.
+Useful for using before Twixtoring as using Twixtor on duplicate frames
+creates choppy output.
+
 ## Installation
 
 Each script inside this repository includes its own folder and can be installed independently.
