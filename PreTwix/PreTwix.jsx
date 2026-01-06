@@ -127,7 +127,7 @@ function getLayers() {
 
     // untested code starts here
     tempDir = Folder.myDocuments.fsName + separator + "PreTwix_Temp";
-    
+
     // Create the temp directory if it doesn't exist
     var tempFolder = new Folder(tempDir);
     if (!tempFolder.exists) {
@@ -138,6 +138,7 @@ function getLayers() {
 
     //tempDir = scriptDir + "/PreTwix_Files/PreTwix_temp"; 
 }
+
 function copyFileToTemp(sourcePath, destPath) {
     var sourceFile = new File(sourcePath);
     var destFile = new File(destPath);
@@ -164,7 +165,18 @@ function renderLayerToSequence(comp, layer, outputDir) {
 
     // untested code ends here, next line should be uncommented to use original output dir
     //om.file = new File(outputDir + "/frames_[####].png");
-    om.applyTemplate("PNG Sequence");
+
+    // More untested code starts here
+    //om.applyTemplate("PNG Sequence");
+
+    om.applyTemplate("Lossless");
+
+    om.setSettings({
+        "Format": "PNG Sequence",
+        "Channels": "RGB",
+        "PNG Depth": "Millions of Colors"
+    });
+    // More untested code ends here
 
     rq.render = true;
     app.project.renderQueue.render();
@@ -191,7 +203,7 @@ function runPythonAnalysis(scriptDir, tempDir) {
             $.writeln("Fallback: " + cmd);
             system.callSystem(cmd);
         }
-        
+
     } else {
         // Mac/Linux: try versioned commands
         pythonPath = "python3.11";
@@ -329,7 +341,7 @@ function resetPreTwixTemp(tempDir, giveMessage) {
 
 // Tries to find the python executable in common location on Windows and Mac
 function findPython() {
-    
+
 
     var pythonPaths = [];
 
