@@ -6,6 +6,9 @@ var layer;
 var scriptDir;
 var tempDir;
 var comp;
+var isMac = $.os.indexOf("Mac") !== -1;
+var isWindows = $.os.indexOf("Win") !== -1;
+var separator = isMac ? "/" : "\\";
 
 (function(thisObj) {
     function buildUI(thisObj) {
@@ -121,7 +124,30 @@ function getLayers() {
         layer.timeRemapEnabled = false;
     }
     scriptDir = File($.fileName).parent.fsName;
-    tempDir = scriptDir + "/PreTwix_Files/PreTwix_temp";
+
+    // untested code starts here
+    tempDir = Folder.myDocuments.fsName + separator + "PreTwix_Temp";
+    
+    // Create the temp directory if it doesn't exist
+    var tempFolder = new Folder(tempDir);
+    if (!tempFolder.exists) {
+        tempFolder.create();
+    }
+    copyFileToTemp(scriptDir + separator + "analyze_frames.py", tempDir + separator + "analyze_frames.py");
+    // untested code ends here, next line should be uncommented to use original temp dir
+
+    //tempDir = scriptDir + "/PreTwix_Files/PreTwix_temp"; 
+}
+function copyFileToTemp(sourcePath, destPath) {
+    var sourceFile = new File(sourcePath);
+    var destFile = new File(destPath);
+
+    if (sourceFile.exists && !destFile.exists) {
+        sourceFile.copy(destFile);
+        $.writeln("Copied " + sourceFile.name + " to temp directory");
+    } else {
+        $.writeln("Source file does not exist: " + sourceFile.fsName);
+    }
 }
 
 // Renders the specified layer of the composition to a PNG sequence in the output directory
@@ -131,7 +157,13 @@ function renderLayerToSequence(comp, layer, outputDir) {
     rq.timeSpanDuration = layer.outPoint - layer.inPoint;
 
     var om = rq.outputModule(1);
-    om.file = new File(outputDir + "/frames_[####].png");
+
+    // untested code starts here
+    tempDir = Folder.myDocuments.fsName + separator + "PreTwix_Temp";
+    om.file = new File(tempDir + separator + "frames_[####].png");
+
+    // untested code ends here, next line should be uncommented to use original output dir
+    //om.file = new File(outputDir + "/frames_[####].png");
     om.applyTemplate("PNG Sequence");
 
     rq.render = true;
@@ -140,12 +172,11 @@ function renderLayerToSequence(comp, layer, outputDir) {
 
 // Runs the external Python script to analyze the rendered frames
 function runPythonAnalysis(scriptDir, tempDir) {
-    var isMac = $.os.indexOf("Mac") !== -1;
-    var isWindows = $.os.indexOf("Win") !== -1;
-    
     var pythonPath;
-    var script = '"' + scriptDir + '/PreTwix_Files/analyze_frames.py"';
-    
+    //var script = '"' + scriptDir + '/PreTwix_Files/analyze_frames.py"';
+    // untested code
+    var script = '"' + tempDir + (isMac ? "/" : "\\") + 'analyze_frames.py"';
+
     if (isWindows) {
         // Try Python Launcher with specific version first
         pythonPath = "py -3.11";
@@ -298,8 +329,7 @@ function resetPreTwixTemp(tempDir, giveMessage) {
 
 // Tries to find the python executable in common location on Windows and Mac
 function findPython() {
-    var isMac = $.os.indexOf("Mac") !== -1;
-    var isWindows = $.os.indexOf("Win") !== -1;
+    
 
     var pythonPaths = [];
 
