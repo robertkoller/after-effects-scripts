@@ -49,8 +49,10 @@ PreTwix is an After Effects script that automatically detects and removes duplic
 **Windows:**  
 `C:\Program Files\Adobe\Adobe After Effects [version]\Support Files\Scripts\ScriptUI Panels\`
 
-3. Restart After Effects.
-4. In After Effects navigate to Edit > Prefrences > Scripting and Expressions, and then 
+3. Create a new output module template and change the formate to PNG Sequence. Name the template "PreTwix_PNG".
+
+4. Restart After Effects.
+5. In After Effects navigate to Edit > Prefrences > Scripting and Expressions, and then 
 check the box "Allow Scripts to Write Files and Access Network".
 
 ---

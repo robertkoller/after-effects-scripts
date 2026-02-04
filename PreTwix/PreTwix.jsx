@@ -1,16 +1,28 @@
 // PreTwix Script for After Effects
 // Gets rid of dead frames in a layer
-// Last Updated: 12/22/2025
+// Last Updated: 01/06/2026
 
 var layer;
-var scriptDir;
-var tempDir;
 var comp;
+var scriptDir = File($.fileName).parent.fsName;
+var separator = isMac ? "/" : "\\";
+var tempDir = Folder.myDocuments.fsName + separator + "PreTwix_Temp";
 var isMac = $.os.indexOf("Mac") !== -1;
 var isWindows = $.os.indexOf("Win") !== -1;
-var separator = isMac ? "/" : "\\";
+var removeDeadFramesJson = true;
+
 
 (function(thisObj) {
+
+    var tempFolder = new Folder(tempDir);
+    if (!tempFolder.exists) {
+        tempFolder.create();
+        $.writeln("Created PreTwix temp folder at: " + tempDir);
+    }
+
+    copyFileToTemp(scriptDir + separator + "PreTwix_Files" + separator + "analyze_frames.py", tempDir + separator + "analyze_frames.py");
+
+    // Build the user interface
     function buildUI(thisObj) {
         var win = (thisObj instanceof Panel) ?
             thisObj :
@@ -48,17 +60,14 @@ var separator = isMac ? "/" : "\\";
         win.add("statictext", undefined, "Made by Dursc");
 
         cleanUp.onClick = function() {
-            scriptDir = File($.fileName).parent.fsName;
-            tempDir = scriptDir + "/PreTwix_Files/PreTwix_temp";
-            resetPreTwixTemp(tempDir, true);
-
+            resetPreTwixTemp(true);
         }
 
         renFrame.onClick = function() {
             app.beginUndoGroup("Render Frames for PreTwix");
             getLayers();
 
-            renderLayerToSequence(comp, layer, tempDir);
+            renderLayerToSequence();
             alert("Rendering Complete");
             app.endUndoGroup();
         }
@@ -67,7 +76,7 @@ var separator = isMac ? "/" : "\\";
             app.beginUndoGroup("Apply Time Remap");
             getLayers();
 
-            applyTimeRemap(layer, tempDir, keepLast.value);
+            applyTimeRemap(keepLast.value);
 
             alert("Time Remap Applied");
             app.endUndoGroup();
@@ -75,28 +84,25 @@ var separator = isMac ? "/" : "\\";
         runAnaly.onClick = function() {
             getLayers();
 
-            runPythonAnalysis(scriptDir, tempDir);
+            runPythonAnalysis();
 
             alert("Analysis Complete");
         }
 
 
         remDFrame.onClick = function() {
-            app.beginUndoGroup("Remove Dead Frames - Render");
+            app.beginUndoGroup("Remove Dead Frames");
 
             getLayers();
 
-            resetPreTwixTemp(tempDir);
+            resetPreTwixTemp();
 
-            renderLayerToSequence(comp, layer, tempDir);
-            app.endUndoGroup();
-
-            app.beginUndoGroup("Remove Dead Frames - Analysis, Remap");
-            runPythonAnalysis(scriptDir, tempDir);
-            applyTimeRemap(layer, tempDir, keepLast.value);
+            renderLayerToSequence();
+            runPythonAnalysis();
+            applyTimeRemap(keepLast.value);
 
             if (cleanUpPre.value) {
-                resetPreTwixTemp(tempDir, false);
+                resetPreTwixTemp(false);
             }
 
             app.endUndoGroup();
@@ -123,70 +129,32 @@ function getLayers() {
     if (layer.timeRemapEnabled) {
         layer.timeRemapEnabled = false;
     }
-    scriptDir = File($.fileName).parent.fsName;
-
-    // untested code starts here
-    tempDir = Folder.myDocuments.fsName + separator + "PreTwix_Temp";
-
-    // Create the temp directory if it doesn't exist
-    var tempFolder = new Folder(tempDir);
-    if (!tempFolder.exists) {
-        tempFolder.create();
-    }
-    copyFileToTemp(scriptDir + separator + "analyze_frames.py", tempDir + separator + "analyze_frames.py");
-    // untested code ends here, next line should be uncommented to use original temp dir
-
-    //tempDir = scriptDir + "/PreTwix_Files/PreTwix_temp"; 
-}
-
-function copyFileToTemp(sourcePath, destPath) {
-    var sourceFile = new File(sourcePath);
-    var destFile = new File(destPath);
-
-    if (sourceFile.exists && !destFile.exists) {
-        sourceFile.copy(destFile);
-        $.writeln("Copied " + sourceFile.name + " to temp directory");
-    } else {
-        $.writeln("Source file does not exist: " + sourceFile.fsName);
-    }
 }
 
 // Renders the specified layer of the composition to a PNG sequence in the output directory
-function renderLayerToSequence(comp, layer, outputDir) {
+function renderLayerToSequence() {
     var rq = app.project.renderQueue.items.add(comp);
     rq.timeSpanStart = layer.inPoint;
     rq.timeSpanDuration = layer.outPoint - layer.inPoint;
 
     var om = rq.outputModule(1);
 
-    // untested code starts here
-    tempDir = Folder.myDocuments.fsName + separator + "PreTwix_Temp";
     om.file = new File(tempDir + separator + "frames_[####].png");
 
-    // untested code ends here, next line should be uncommented to use original output dir
-    //om.file = new File(outputDir + "/frames_[####].png");
-
-    // More untested code starts here
-    //om.applyTemplate("PNG Sequence");
-
-    om.applyTemplate("Lossless");
-
-    om.setSettings({
-        "Format": "PNG Sequence",
-        "Channels": "RGB",
-        "PNG Depth": "Millions of Colors"
-    });
-    // More untested code ends here
-
-    rq.render = true;
-    app.project.renderQueue.render();
+    try {
+        om.applyTemplate("PreTwix_PNG");
+        rq.render = true;
+        app.project.renderQueue.render();
+    } catch (e) {
+        alert("Rendering failed or output format is not PNG.\nPlease ensure the 'PreTwix_PNG' output module template is set to PNG Sequence. Maybe check README for help.");
+        resetPreTwixTemp(false);
+        throw new Error("PNG render failed - template not configured");
+    }
 }
 
 // Runs the external Python script to analyze the rendered frames
-function runPythonAnalysis(scriptDir, tempDir) {
+function runPythonAnalysis() {
     var pythonPath;
-    //var script = '"' + scriptDir + '/PreTwix_Files/analyze_frames.py"';
-    // untested code
     var script = '"' + tempDir + (isMac ? "/" : "\\") + 'analyze_frames.py"';
 
     if (isWindows) {
@@ -222,7 +190,7 @@ function runPythonAnalysis(scriptDir, tempDir) {
 }
 
 // Applies time remapping to the given layer based on dead frames identified in deadFrames.json
-function applyTimeRemap(layer, tempDir, keepLast) {
+function applyTimeRemap(keepLast) {
     var file = new File(tempDir + "/deadFrames.json");
     file.open("r");
     var raw = file.read();
@@ -241,7 +209,8 @@ function applyTimeRemap(layer, tempDir, keepLast) {
     file.close();
     var frameDur = layer.containingComp.frameDuration;
     var totalFrames = Math.floor((layer.outPoint - layer.inPoint) / frameDur);
-
+    var inPoint = layer.inPoint;
+    layer.startTime = 0;
     // Enables time remapping and removes all keys except for the first one.
     layer.timeRemapEnabled = true;
     var tr = layer.property("ADBE Time Remapping");
@@ -263,15 +232,13 @@ function applyTimeRemap(layer, tempDir, keepLast) {
     // but it can be removed if not needed.
     tr.setValueAtTime(newTime, 0);
     tr.removeKey(tr.numKeys);
-
-    var inPoint = layer.inPoint;
+    
     newTime = keepLast ? newTime + frameDur : newTime;
 
     // Moves layer to beginning of composition temporarily
     layer.inPoint = 0;
     layer.outPoint = newTime;
     originalFPS = layer.containingComp.frameRate;
-
 
     var dur = newTime;
     var originalIndex = layer.index;
@@ -292,8 +259,8 @@ function applyTimeRemap(layer, tempDir, keepLast) {
 
 }
 
-// Cleans up the temporary directory by deleting generated PNGs and resetting deadFrames.json
-function resetPreTwixTemp(tempDir, giveMessage) {
+// Cleans up the temporary directory by deleting generated PNGs and resetting or deleting deadFrames.json
+function resetPreTwixTemp(giveMessage) {
     var dir = new Folder(tempDir);
     if (!dir.exists) {
         alert("Temp directory does not exist.");
@@ -304,7 +271,7 @@ function resetPreTwixTemp(tempDir, giveMessage) {
     var deletedCount = 0;
     var failedCount = 0;
 
-    // Delete all generated frame PNGs except the placeholder
+    // Delete all generated frame PNGs
     for (var i = 0; i < files.length; i++) {
         var f = files[i];
 
@@ -336,6 +303,19 @@ function resetPreTwixTemp(tempDir, giveMessage) {
         }
     } catch (e) {
         alert("Cleanup complete!\nDeleted: " + deletedCount + " files\nFailed: " + failedCount + " files\nFailed to reset deadFrames.json: " + e.toString());
+    }
+}
+
+// Copies a file from sourcePath to destPath if it doesn't already exist at destPath
+function copyFileToTemp(sourcePath, destPath) {
+    var sourceFile = new File(sourcePath);
+    var destFile = new File(destPath);
+
+    if (sourceFile.exists && !destFile.exists) {
+        sourceFile.copy(destFile);
+        $.writeln("Copied " + sourceFile.name + " to temp directory");
+    } else {
+        $.writeln("Source file does not exist: " + sourceFile.fsName);
     }
 }
 
